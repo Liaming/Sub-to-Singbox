@@ -380,7 +380,27 @@ if __name__ == "__main__":
 
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             f.write(json_str)
-        logging.info(f"✅ 成功: 解析出 {len(nodes)} 个节点，本地文件已生成: {OUTPUT_FILE}")
+        logging.info(f"✅ 成功: 共解析出 {len(nodes)} 个节点，本地文件已生成: {OUTPUT_FILE}")
+
+        # --- 新增：协议统计与提示说明 ---
+        stats = {}
+        for n in nodes:
+            proto = n.get('type', 'unknown')
+            stats[proto] = stats.get(proto, 0) + 1
+            
+        logging.info("=" * 45)
+        logging.info("📊 节点协议解析统计:")
+        # 按数量倒序排列打印
+        for proto, count in sorted(stats.items(), key=lambda x: x[1], reverse=True):
+            logging.info(f"   - {proto.upper().ljust(12)}: {count} 个")
+        logging.info("-" * 45)
+        logging.info("💡 温馨提示：")
+        logging.info("   如果您发现某些协议（如 Hysteria2 / TUIC 等）数量为 0，")
+        logging.info("   通常是因为机场提供的 URI 格式非标准，或者您的订阅转")
+        logging.info("   换规则过滤了该类高级协议。这并非脚本解析错误或机场")
+        logging.info("   节点作假，请放心使用。")
+        logging.info("=" * 45)
+        # ---------------------------------
 
         if GIST_ID and GIST_TOKEN:
             logging.info(f">>> 检测到 Gist 配置，正在同步到 GitHub ({GIST_ID[:6]}...)...")

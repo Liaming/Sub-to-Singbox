@@ -1,4 +1,4 @@
-````markdown
+
 # Sing-box Subscription Converter 🚀
 
 一个专为 [Sing-box](https://sing-box.sagernet.org/) 打造的高阶 Python 订阅转换与管理脚本。
@@ -32,7 +32,6 @@
 git clone [https://github.com/Liaming/Sub-to-Singbox.git](https://github.com/Liaming/Sub-to-Singbox.git)
 cd Sub-to-Singbox
 ```
-````
 
 ### 3. 配置虚拟环境并安装依赖
 

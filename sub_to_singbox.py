@@ -76,7 +76,7 @@ TEMPLATE = {
         {
             "type": "tun", "tag": "tun-in", "interface_name": "singbox-tun",
             "inet4_address": "172.19.0.1/30", "mtu": 1420, "auto_route": True,
-            "strict_route": True, "stack": "system", "sniff": True, "sniff_override_destination": False
+            "strict_route": True, "stack": "system", "sniff": True, "sniff_override_destination": True
         },
         {
             "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1",
@@ -99,6 +99,11 @@ TEMPLATE = {
             {
               "port":[853],
               "action":"reject"
+            },
+            {
+              "protocol": "udp",
+              "port": [443],
+              "action": "reject" # 强制屏蔽 QUIC，诱导其回退到 TLS
             },
             {"protocol": "dns", "outbound": "dns-out"},
             {"ip_is_private": True, "outbound": "direct"},

@@ -74,7 +74,7 @@ TEMPLATE = {
     "inbounds": [
         {
             "type": "tun", "tag": "tun-in", "interface_name": "singbox-tun",
-            "inet4_address": "172.19.0.1/30", "mtu": 1500, "auto_route": True,
+            "inet4_address": "172.19.0.1/30", "mtu": 1420, "auto_route": True,
             "strict_route": True, "stack": "system", "sniff": True, "sniff_override_destination": False
         },
         {

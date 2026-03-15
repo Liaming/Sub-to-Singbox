@@ -55,6 +55,7 @@ TEMPLATE = {
         "cache_file": {"enabled": True, "path": "cache.db"}
     },
     "dns": {
+        "listen": "127.0.0.1:5353",
         "servers": [
             {"tag": "remote_dns", "address": "https://1.1.1.1/dns-query", "detour": "proxy"},
             {"tag": "local_dns", "address": "https://dns.alidns.com/dns-query", "address_resolver": "bootstrap_dns", "detour": "direct"},
@@ -95,6 +96,10 @@ TEMPLATE = {
             {"type": "remote", "tag": "geosite-geolocation-!cn", "format": "binary", "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"}
         ],
         "rules": [
+            {
+              "port":[853],
+              "action":"reject"
+            },
             {"protocol": "dns", "outbound": "dns-out"},
             {"ip_is_private": True, "outbound": "direct"},
             {"rule_set": "geosite-cn", "outbound": "direct"},

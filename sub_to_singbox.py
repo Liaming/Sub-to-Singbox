@@ -92,36 +92,68 @@ TEMPLATE = {
     ],
     "route": {
         "rule_set": [
-            {"type": "remote", "tag": "geosite-cn", "format": "binary", "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs", "download_detour": "direct"},
-            {"type": "remote", "tag": "geosite-geolocation-!cn", "format": "binary", "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"}
+            {
+                "type": "remote", "tag": "geosite-cn", "format": "binary", 
+                "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs", 
+                "download_detour": "direct"
+            },
+            {
+                "type": "remote", "tag": "geosite-geolocation-!cn", "format": "binary", 
+                "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs", 
+                "download_detour": "direct"
+            },
+            {
+                "type": "remote", "tag": "geosite-category-ads-all", "format": "binary", 
+                "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs", 
+                "download_detour": "direct"
+            },
+            {
+                "type": "remote", "tag": "geoip-cn", "format": "binary", 
+                "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs", 
+                "download_detour": "direct"
+            }
         ],
         "rules": [
-            { "protocol": "dns", 
-              "action": "hijack-dns" 
-            },
+            # --- 1. 底层核心防线 (防漏水、防超时) ---
+            { "protocol": "dns", "action": "hijack-dns" },
+            { "port": 53, "action": "hijack-dns" },
+            { "protocol": ["stun", "quic"], "action": "reject" },
+            { "port": 853, "action": "reject" },
+            { "network": "udp", "port": [443, 784, 8853], "action": "reject" },
 
-            {
-              "protocol": ["stun","quic"],
-              "action": "reject"
-            },
-
-            {
-              "port": 853,
-              "action": "reject"
-            },
+            # --- 2. 🌟 手动添加自定义规则的位置 🌟 ---
+            # 规则匹配是从上到下的，越靠上优先级越高。你的个性化规则应该写在这里。
             
+            # 示例 A：按进程名分流 (雷电模拟器直连)
+            { "process_name": ["dnplayer.exe", "LdVBoxHeadless.exe", "leidian.exe"], "outbound": "direct" },
             
-            {
-              "network": "udp",
-              "port": [443,784,853,8853],
-              "action": "reject"
-            },
+            # 示例 B：按域名后缀阻断 (拦截 Autodesk 验证)
+            { "domain_suffix": ["autodesk.com"], "action": "reject" },
+            
+            # 示例 C：按域名后缀强制直连 (清华大学、本地测试域名)
+            { "domain_suffix": ["tsinghua.edu.cn", "localhost", "ttek.site"], "outbound": "direct" },
+            
+            # 示例 D：按域名强制走代理 (AI 工具)
+            { "domain_suffix": ["trae.ai"], "outbound": "proxy" },
+            
+            # 示例 E：放行 ICMP 协议 (让你在终端 ping 网址时能通，方便测试网络)
+            { "network": "icmp", "outbound": "direct" },
 
-            {"ip_is_private": True, "outbound": "direct"},
-            {"rule_set": "geosite-cn", "outbound": "direct"},
-            {"rule_set": "geosite-geolocation-!cn", "outbound": "proxy"},
-            {"outbound": "proxy"}
-            ],
+            # --- 3. 宏观规则集 (补全你漏掉的两个规则) ---
+            # 补全漏掉的广告拦截 (丢进黑洞)
+            { "rule_set": "geosite-category-ads-all", "outbound": "block" },
+            
+            { "ip_is_private": True, "outbound": "direct" },
+            { "rule_set": "geosite-cn", "outbound": "direct" },
+            
+            # 补全漏掉的国内 IP 直连 (防止某些国内 App 走代理)
+            { "rule_set": "geoip-cn", "outbound": "direct" },
+            
+            { "rule_set": "geosite-geolocation-!cn", "outbound": "proxy" },
+            
+            # --- 4. 最终兜底 ---
+            { "outbound": "proxy" }
+        ],
         "auto_detect_interface": True
     }
 }

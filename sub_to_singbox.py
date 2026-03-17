@@ -75,7 +75,7 @@ TEMPLATE = {
     "inbounds": [
         {
             "type": "tun", "tag": "tun-in", "interface_name": "singbox-tun",
-            "inet4_address": "172.19.0.1/30", "mtu": 1420, "auto_route": True,
+            "inet4_address": "198.18.0.1/16", "mtu": 1420, "auto_route": True,
             "strict_route": True, "stack": "system", "sniff": True, "sniff_override_destination": True
         },
         {
@@ -96,21 +96,32 @@ TEMPLATE = {
             {"type": "remote", "tag": "geosite-geolocation-!cn", "format": "binary", "url": "https://testingcf.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs", "download_detour": "direct"}
         ],
         "rules": [
-            {
-              "port":[853],
-              "action":"reject"
+            { "protocol": "dns", 
+              "action": "hijack-dns" 
             },
+
             {
-              "protocol": "udp",
-              "port": [443],
-              "action": "reject" # 强制屏蔽 QUIC，诱导其回退到 TLS
+              "protocol": ["stun","quic"],
+              "action": "reject"
             },
-            {"protocol": "dns", "outbound": "dns-out"},
+
+            {
+              "port": 853,
+              "action": "reject"
+            },
+            
+            
+            {
+              "network": "udp",
+              "port": [443,784,853,8853],
+              "action": "reject"
+            },
+
             {"ip_is_private": True, "outbound": "direct"},
             {"rule_set": "geosite-cn", "outbound": "direct"},
             {"rule_set": "geosite-geolocation-!cn", "outbound": "proxy"},
             {"outbound": "proxy"}
-        ],
+            ],
         "auto_detect_interface": True
     }
 }
@@ -347,7 +358,7 @@ def fetch_nodes():
             logging.debug(f"[Line {line_no}] 未知或不支持的协议前缀。")
 
         if n:
-            physical_id = f"{n['type']}:{n['server']}:{n['server_port']}"
+            physical_id = f"{n['type']}:{n['server']}:{n['server_port']}:{n.get('uuid','')}"
             if physical_id in physical_seen: 
                 logging.debug(f"[Line {line_no}] 发现物理重复节点已跳过: {physical_id}")
                 continue 
@@ -387,6 +398,7 @@ if __name__ == "__main__":
         cfg = build_config(nodes)
         
         json_str = json.dumps(cfg, indent=2, ensure_ascii=False)
+        json_str = json_str.replace('\u00a0', ' ')
 
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             f.write(json_str)

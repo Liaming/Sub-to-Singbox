@@ -378,14 +378,49 @@ def fetch_nodes():
 
     return nodes
 
+def is_real_node(node):
+    """
+    智能判断是否为真实的物理节点，用于过滤机场的提示/广告节点。
+    """
+    tag = str(node.get("tag", "")).lower()
+    server = str(node.get("server", "")).lower()
+
+    # 1. 过滤常见提示词 (拦截大部分常规提示词)
+    ignore_keywords = [
+        "剩余", "到期", "过期", "官网", "重置", "流量", "套餐", 
+        "联系", "群", "频道", "公告", "通知", "获取", "请勿", "dont", "更新"
+    ]
+    if any(kw in tag for kw in ignore_keywords):
+        return False
+
+    # 2. 过滤虚假服务器地址 (直击底层，拦截率极高)
+    fake_servers = ["127.0.0.1", "0.0.0.0", "8.8.8.8", "1.1.1.1", "localhost", "example.com"]
+    if server in fake_servers:
+        return False
+        
+    # 3. 拦截带有明显占位符特征的域名
+    if "dont" in server or "fake" in server or "traffic" in server:
+        return False
+
+    return True
+
 def build_config(nodes):
     config = copy.deepcopy(TEMPLATE)
-    tags = [n["tag"] for n in nodes]
     
+    # 获取所有节点标签 (用于 proxy 手动选择组，让你依然能在面板看到通知)
+    all_tags = [n["tag"] for n in nodes]
+    
+    # 筛选出真实的节点标签 (用于 auto 测速组，防止 DNS 解析报错)
+    auto_tags = [n["tag"] for n in nodes if is_real_node(n)]
+    
+    # 智能分配策略组
     for out in config["outbounds"]:
-        if out.get("tag") in ["proxy", "auto"]:
-            out["outbounds"].extend(tags)
+        if out.get("tag") == "proxy":
+            out["outbounds"].extend(all_tags)
+        elif out.get("tag") == "auto":
+            out["outbounds"].extend(auto_tags)
             
+    # 将节点详情追加到配置末尾
     config["outbounds"].extend(nodes)
     return config
 
